@@ -71,6 +71,8 @@ az containerapp update --name APP -g RG --min-replicas 0
 
 Check utilization against allocation. If average CPU < 25% of allocated, consider downsizing:
 
+> **Note**: Costs are approximate and vary by region. Use the [Azure pricing calculator](https://azure.microsoft.com/pricing/calculator/) for current rates.
+
 | Allocation | Monthly Cost (Consumption, approx) |
 |-----------|-----------------------------------|
 | 0.25 vCPU / 0.5 GiB | ~$15/mo per always-on replica |

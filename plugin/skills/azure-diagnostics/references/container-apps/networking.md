@@ -108,7 +108,7 @@ az containerapp show --name APP -g RG \
   --query "properties.configuration.ingress"
 ```
 
-**Note:** Maximum ingress timeout is 240 seconds. For longer operations:
+**Note:** Default ingress timeout is 240 seconds (configurable up to 3600s via `requestTimeoutDuration`). For operations exceeding the maximum:
 - Use asynchronous request patterns (return 202 with status endpoint)
 - Use Container Apps Jobs for long-running batch work
 - Use WebSocket connections for streaming

@@ -125,9 +125,17 @@ extension_azqr({
 })
 ```
 
-### Step 3–9: (Unchanged)
+### Step 3–9: Standard Cost Optimization Workflow
 
-Continue with the standard cost optimization workflow: Discover Resources, Query Actual Costs, Validate Pricing, Collect Utilization Metrics, Generate Report, Save Audit Trail, Clean Up.
+Continue with the standard cost optimization workflow:
+
+3. **Discover Resources** — Use Resource Graph to inventory target resources
+4. **Query Actual Costs** — Pull cost data via Cost Management APIs
+5. **Validate Pricing** — Cross-reference with current Azure pricing
+6. **Collect Utilization Metrics** — Gather CPU, memory, and request metrics
+7. **Generate Report** — Produce structured findings with savings estimates
+8. **Save Audit Trail** — Persist analysis for future reference
+9. **Clean Up** — Remove temporary files and summarize actions taken
 
 ## References
 

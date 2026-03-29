@@ -9,9 +9,8 @@ Constraints, limits, and unsupported features for Azure Container Apps migration
 | vCPU per container | 4 max | Consumption plan |
 | Memory per container | 8 GiB max | Consumption plan |
 | Replicas per app | 300 max | Across all revisions |
-| Apps per environment | 100 max | Soft limit, can request increase |
 | Containers per app | 10 max | Including init and sidecar containers |
-| Ingress timeout | 240 seconds max | For long-running requests |
+| Ingress timeout | 240 seconds default (configurable up to 3600s) | Set via `requestTimeoutDuration` |
 
 ## Unsupported Kubernetes Features
 

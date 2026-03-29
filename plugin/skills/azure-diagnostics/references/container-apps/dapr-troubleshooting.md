@@ -84,7 +84,7 @@ az containerapp env dapr-component set --name ENV -g RG \
   --yaml dapr-statestore.yaml
 ```
 
-Example component YAML:
+Example component YAML (using Key Vault reference with managed identity):
 ```yaml
 componentType: state.azure.cosmosdb
 version: v1
@@ -97,12 +97,12 @@ metadata:
     value: "mystate"
   - name: masterKey
     secretRef: cosmos-key
-secrets:
-  - name: cosmos-key
-    value: "<key>"
+secretStoreComponent: "azurekeyvault"
 scopes:
   - my-app
 ```
+
+> **Security**: Avoid storing secrets directly in component manifests. Use an [Azure Key Vault secret store component](https://learn.microsoft.com/azure/container-apps/dapr-component-connection) with managed identity.
 
 ## Pub/Sub Not Delivering Messages
 

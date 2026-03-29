@@ -26,7 +26,7 @@ This guide covers migration from **GCP Cloud Run** services to Azure Container A
 | Max instances | 1000 | 300 replicas |
 | Max vCPU per instance | 8 | 4 (Consumption) |
 | Max memory per instance | 32 GiB | 8 GiB (Consumption) |
-| Request timeout | 60 min | 4 min (240s) |
+| Request timeout | 60 min | 240s default (configurable up to 3600s) |
 | Revision-based traffic splitting | ✅ | ✅ |
 | Managed TLS certificates | ✅ | ✅ |
 | Custom domains | ✅ | ✅ |
@@ -101,8 +101,8 @@ Load [assessment.md](assessment.md) for the full compatibility matrix.
 |------------------|-----------|------------|
 | >4 vCPU per instance | 4 vCPU max (Consumption) | Use Dedicated workload profiles or optimize |
 | >8 GiB memory | 8 GiB max (Consumption) | Use Dedicated workload profiles or optimize |
-| >240s request timeout | 240s max | Use async patterns or Container Apps Jobs |
-| gRPC streaming >4 min | Ingress timeout limit | Use WebSocket or chunked responses |
+| >3600s request timeout | 3600s max (increase via `requestTimeoutDuration`) | Use async patterns or Container Apps Jobs |
+| gRPC streaming >60 min | Ingress timeout limit | Use WebSocket or chunked responses |
 | Cloud SQL proxy sidecar | No Cloud SQL | Use Azure SQL with managed identity |
 
 ## Phase 3: Migrate Container Images
@@ -189,7 +189,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
 | 502/503 on endpoint | Port mismatch | Ensure `targetPort` matches app listen port |
 | Slow cold starts | Scale-to-zero with heavy init | Set `minReplicas: 1` or optimize startup |
 | Missing env vars | GCP-specific vars not mapped | Map all Cloud Run env vars to ACA env |
-| Timeout errors | Request exceeds 240s | Use async patterns or Container Apps Jobs |
+| Timeout errors | Request exceeds configured timeout (default 240s, max 3600s) | Increase `requestTimeoutDuration` or use async patterns |
 
 ## References
 
