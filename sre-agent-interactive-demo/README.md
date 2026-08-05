@@ -10,7 +10,7 @@ Open `index.html` directly, or serve the repository:
 python -m http.server 8000
 ```
 
-Then browse to `http://localhost:8000/interactive-demo/`.
+Then browse to `http://localhost:8000/sre-agent-interactive-demo/`.
 
 ## GitHub Pages
 
@@ -24,7 +24,7 @@ stable public entry point.
 
 ## Publish with Azure Static Web Apps
 
-Azure Static Web Apps is the better choice when the demo needs a custom domain, deployment environments, authentication, access restrictions, or Azure-native monitoring. Configure the app location as `interactive-demo` and leave the API location empty.
+Azure Static Web Apps is the better choice when the demo needs a custom domain, deployment environments, authentication, access restrictions, or Azure-native monitoring. Configure the app location as `sre-agent-interactive-demo` and leave the API location empty.
 
 ## Add real screenshots or video
 
