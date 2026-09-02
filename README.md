@@ -1,9 +1,10 @@
 # Azure Container Apps — Skills & Documentation
 
-This repository contains two complementary sets of Azure Container Apps content:
+This repository contains three complementary sets of Azure Container Apps content:
 
 1. **ACA Skill Contributions** (plugin/skills/) — Proposed skill files for [GitHub Copilot for Azure](https://github.com/microsoft/GitHub-Copilot-for-Azure) that improve Container Apps capabilities within the Copilot agent.
-2. **ACA Express Documentation** (ca-express-docs/) — Comprehensive documentation for Azure Container Apps Express, covering deployment, configuration, scaling, monitoring, and troubleshooting.
+2. **ACA Express Documentation** (aca-express-docs/) — Comprehensive documentation for Azure Container Apps Express, covering deployment, configuration, scaling, monitoring, and troubleshooting.
+3. **ACA Sandbox Agent 365 Sample** ([aca-sandbox-agent-a365/](aca-sandbox-agent-a365/)) — An offline-first inbox agent that demonstrates Azure Container Apps Sandbox lifecycle management and Microsoft Agent 365 identity, tooling, observability, and governance.
 
 ---
 
@@ -44,6 +45,16 @@ The `aca-express-docs/` folder contains 8 comprehensive guides:
 | [Troubleshooting](aca-express-docs/shell-access-troubleshooting.md) | Console access, common issues (startup, image pull, auth, scaling) |
 | [Local Development](aca-express-docs/local-development-testing.md) | Docker, Compose, registry push, ACR Build workflow |
 | [Samples](aca-express-docs/samples.md) | Quickstarts: Node.js, Python Flask, .NET 8, Nginx static site, auth, custom domain |
+
+---
+
+## ACA Sandbox Agent 365 Sample
+
+The `aca-sandbox-agent-a365/` sample shows how to run an interactive Python
+inbox agent in a lifecycle-managed Azure Container Apps Sandbox, register it
+with Microsoft Agent 365, and access Work IQ Mail through delegated
+on-behalf-of authorization. Start with its fixture-backed offline mode before
+enabling any live mailbox permission.
 
 ---
 

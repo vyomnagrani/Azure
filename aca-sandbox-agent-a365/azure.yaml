@@ -1,0 +1,20 @@
+name: aca-sandbox-agent-a365
+metadata:
+  template: aca-sandbox-agent-a365@0.1.0
+
+infra:
+  provider: bicep
+  path: ./infra
+
+services: {}
+
+hooks:
+  postprovision:
+    posix:
+      shell: sh
+      run: ./infra/scripts/sandbox.sh preflight
+      interactive: false
+    windows:
+      shell: pwsh
+      run: ./infra/scripts/sandbox.ps1 -Action preflight
+      interactive: false

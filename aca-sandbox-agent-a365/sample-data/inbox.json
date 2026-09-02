@@ -1,0 +1,31 @@
+{
+  "messages": [
+    {
+      "id": "msg-001",
+      "sender": {"name": "Alex Chen", "address": "alex.chen@example.test"},
+      "recipients": [{"name": "Offline Sample User", "address": "user@example.test"}],
+      "subject": "Urgent: access review due today",
+      "body": "Could you confirm the access review is complete today? The audit is blocked until we hear back.",
+      "received_at": "2026-08-31T16:30:00Z",
+      "is_read": false
+    },
+    {
+      "id": "msg-002",
+      "sender": {"name": "Morgan Lee", "address": "morgan.lee@example.test"},
+      "recipients": [{"name": "Offline Sample User", "address": "user@example.test"}],
+      "subject": "September planning meeting",
+      "body": "Can we schedule the planning meeting for Thursday afternoon?",
+      "received_at": "2026-08-30T19:15:00Z",
+      "is_read": false
+    },
+    {
+      "id": "msg-003",
+      "sender": {"name": "Contoso Updates", "address": "updates@example.test"},
+      "recipients": [{"name": "Offline Sample User", "address": "user@example.test"}],
+      "subject": "Weekly newsletter",
+      "body": "FYI: this week's product news. No action is required.",
+      "received_at": "2026-08-29T12:00:00Z",
+      "is_read": true
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 365 Inbox Assistant</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0 auto; max-width: 980px; padding: 1.5rem; }
+    header, section { margin-bottom: 1rem; }
+    .banner { background: #0b5cab; color: white; border-radius: .5rem; padding: .8rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    article { border: 1px solid #8886; border-radius: .5rem; padding: .8rem; margin: .5rem 0; }
+    button, input, textarea { padding: .55rem; margin: .25rem 0; }
+    textarea { width: 100%; min-height: 5rem; box-sizing: border-box; }
+    pre { white-space: pre-wrap; background: #8882; padding: .8rem; border-radius: .5rem; }
+    [hidden] { display: none !important; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Inbox Assistant</h1>
+    <div id="mode" class="banner">Loading mode…</div>
+    <div id="authControls" hidden>
+      <button id="signIn" onclick="signIn()">Sign in with Microsoft</button>
+      <button id="signOut" onclick="signOut()" hidden>Sign out</button>
+      <span id="account"></span>
+    </div>
+  </header>
+  <main class="grid">
+    <section>
+      <h2>Inbox</h2>
+      <button onclick="loadInbox()">Load inbox</button>
+      <div id="inbox"></div>
+    </section>
+    <section>
+      <h2>Q&amp;A</h2>
+      <textarea id="question">Which messages need my attention?</textarea>
+      <button onclick="ask()">Ask</button>
+      <pre id="answer" aria-live="polite"></pre>
+      <h2>Triage and draft</h2>
+      <p>Choose a message, triage it, then create a reply draft.</p>
+      <input id="messageId" placeholder="Message ID">
+      <button onclick="triage()">Triage</button>
+      <textarea id="instructions" placeholder="Optional draft instructions"></textarea>
+      <button onclick="draft()">Create draft</button>
+      <pre id="work" aria-live="polite"></pre>
+      <button id="send" onclick="confirmAndSend()" disabled>Confirm and send draft</button>
+    </section>
+  </main>
+  <script>
+    const AUTH_SCHEME = ["Bear", "er"].join("");
+    let currentDraft = null;
+    let signInConfig = {enabled: false};
+    let msalApp = null;
+
+    const output = (id, value) => document.getElementById(id).textContent =
+      typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+    function loadScript(url) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Could not load the configured MSAL Browser script."));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initializeSignIn(config) {
+      signInConfig = config;
+      if (!config.enabled) return;
+      document.getElementById("authControls").hidden = false;
+      await loadScript(config.msal_browser_cdn_url);
+      msalApp = new msal.PublicClientApplication({
+        auth: {
+          clientId: config.spa_client_id,
+          authority: config.authority,
+          redirectUri: window.location.origin
+        },
+        cache: {cacheLocation: "sessionStorage"}
+      });
+      if (typeof msalApp.initialize === "function") await msalApp.initialize();
+      const redirect = await msalApp.handleRedirectPromise();
+      const account = redirect?.account || msalApp.getAllAccounts()[0];
+      if (account) {
+        msalApp.setActiveAccount(account);
+        showAccount(account);
+      }
+    }
+
+    function showAccount(account) {
+      document.getElementById("account").textContent = account.username || account.name || "Signed in";
+      document.getElementById("signIn").hidden = true;
+      document.getElementById("signOut").hidden = false;
+    }
+
+    async function signIn() {
+      try {
+        const result = await msalApp.loginPopup({scopes: [signInConfig.api_scope]});
+        msalApp.setActiveAccount(result.account);
+        showAccount(result.account);
+        await loadInbox();
+      } catch (error) { output("answer", error.message); }
+    }
+
+    async function signOut() {
+      const account = msalApp.getActiveAccount();
+      await msalApp.logoutPopup({account, postLogoutRedirectUri: window.location.origin});
+    }
+
+    async function accessToken() {
+      if (!signInConfig.enabled) return null;
+      const account = msalApp?.getActiveAccount() || msalApp?.getAllAccounts()[0];
+      if (!account) throw new Error("Sign in before accessing the live mailbox.");
+      try {
+        return (await msalApp.acquireTokenSilent({
+          account, scopes: [signInConfig.api_scope]
+        })).accessToken;
+      } catch {
+        return (await msalApp.acquireTokenPopup({
+          account, scopes: [signInConfig.api_scope]
+        })).accessToken;
+      }
+    }
+
+    async function api(path, options = {}, authenticated = true) {
+      const token = authenticated ? await accessToken() : null;
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? {"Authorization": `${AUTH_SCHEME} ${token}`} : {}),
+          ...(options.headers || {})
+        }
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || `HTTP ${response.status}`);
+      return body;
+    }
+
+    async function load() {
+      try {
+        const [health, config] = await Promise.all([
+          api("/health", {}, false),
+          api("/api/auth/config", {}, false)
+        ]);
+        output("mode", health.mode === "offline"
+          ? "OFFLINE FIXTURE MODE — no mailbox, identity, CDN, or model network calls; sending is blocked."
+          : "LIVE MODE — sign in to use delegated Agent 365 permissions.");
+        await initializeSignIn(config);
+        if (health.mode === "offline") await loadInbox();
+      } catch (error) { output("answer", error.message); }
+    }
+
+    async function loadInbox() {
+      try {
+        const messages = await api("/api/inbox");
+        const inbox = document.getElementById("inbox");
+        inbox.replaceChildren();
+        for (const message of messages) {
+          const article = document.createElement("article");
+          const title = document.createElement("strong");
+          title.textContent = message.subject;
+          const details = document.createElement("div");
+          details.textContent = `${message.sender_name} · ${message.id} · ${message.received_at}`;
+          const select = document.createElement("button");
+          select.textContent = "Select";
+          select.onclick = () => selectMessage(message.id);
+          article.append(title, details, select);
+          inbox.appendChild(article);
+        }
+      } catch (error) { output("answer", error.message); }
+    }
+
+    function selectMessage(id) { document.getElementById("messageId").value = id; }
+
+    async function ask() {
+      try { output("answer", await api("/api/ask", {method: "POST", body: JSON.stringify({
+        question: document.getElementById("question").value
+      })})); } catch (error) { output("answer", error.message); }
+    }
+
+    async function triage() {
+      try { output("work", await api("/api/triage", {method: "POST", body: JSON.stringify({
+        message_id: document.getElementById("messageId").value
+      })})); } catch (error) { output("work", error.message); }
+    }
+
+    async function draft() {
+      try {
+        currentDraft = await api("/api/drafts", {method: "POST", body: JSON.stringify({
+          message_id: document.getElementById("messageId").value,
+          instructions: document.getElementById("instructions").value || null
+        })});
+        output("work", currentDraft);
+        document.getElementById("send").disabled = false;
+      } catch (error) { output("work", error.message); }
+    }
+
+    async function confirmAndSend() {
+      if (!currentDraft || !window.confirm("Send this exact draft now?")) return;
+      try {
+        const confirmation = await api("/api/confirmations", {method: "POST",
+          body: JSON.stringify({draft_id: currentDraft.id})});
+        output("work", await api("/api/send", {method: "POST", body: JSON.stringify({
+          draft_id: currentDraft.id, confirmation_token: confirmation.token
+        })}));
+      } catch (error) { output("work", error.message); }
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+name: Validate ACA Sandbox Agent 365 sample
+
+on:
+  pull_request:
+    paths:
+      - "aca-sandbox-agent-a365/**"
+      - ".github/workflows/aca-sandbox-agent-a365-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "aca-sandbox-agent-a365/**"
+      - ".github/workflows/aca-sandbox-agent-a365-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aca-sandbox-agent-a365
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: aca-sandbox-agent-a365/pyproject.toml
+
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check -e ".[test]"
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Compile Python sources
+        run: python -m compileall -q app tests
+
+      - name: Validate Bash lifecycle script
+        run: bash -n infra/scripts/sandbox.sh
+
+      - name: Validate PowerShell lifecycle script
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path ./infra/scripts/sandbox.ps1),
+            [ref]$tokens,
+            [ref]$errors
+          ) > $null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List | Out-String | Write-Error
+            exit 1
+          }
+
+      - name: Validate Bicep
+        uses: azure/cli@v2
+        with:
+          inlineScript: >-
+            az bicep build
+            --file aca-sandbox-agent-a365/infra/main.bicep
+            --stdout
+            > /dev/null
