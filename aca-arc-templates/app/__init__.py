@@ -1,0 +1,2 @@
+"""Contoso Edge Store application."""
+

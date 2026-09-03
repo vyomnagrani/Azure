@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contoso Edge Store Inventory</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; }
+    body { margin: 0; background: #f4f7fb; color: #172033; }
+    header { background: #243b67; color: white; padding: 1.5rem max(1rem, calc((100% - 68rem) / 2)); }
+    main { max-width: 68rem; margin: auto; padding: 1.5rem 1rem; }
+    .notice { background: #fff4ce; border-left: .3rem solid #8a6d00; padding: .8rem; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .8rem; margin: 1rem 0; }
+    .card, table { background: white; border: 1px solid #d8e0ed; border-radius: .4rem; }
+    .card { padding: 1rem; }
+    .value { display: block; font-size: 1.6rem; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; }
+    th, td { padding: .75rem; text-align: left; border-bottom: 1px solid #e3e8f0; }
+    th { background: #eaf0f8; }
+    input { width: 5rem; padding: .4rem; }
+    button { padding: .45rem .7rem; background: #0067b8; color: white; border: 0; border-radius: .25rem; cursor: pointer; }
+    button:focus, input:focus { outline: .2rem solid #ffb900; outline-offset: .1rem; }
+    .out_of_stock { color: #a4262c; font-weight: 700; }
+    .low_stock { color: #8a6d00; font-weight: 700; }
+    #message { min-height: 1.5rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 42rem) { table, thead, tbody, th, td, tr { display: block; } thead { position: absolute; left: -9999px; } td::before { content: attr(data-label) ": "; font-weight: 700; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Contoso Edge Store</h1>
+    <p>Local inventory dashboard</p>
+  </header>
+  <main>
+    <p class="notice"><strong>Educational milestone:</strong> inventory is held in memory and resets whenever the process restarts.</p>
+    <p id="message" role="status" aria-live="polite">Loading inventory...</p>
+    <section class="summary" aria-label="Inventory summary">
+      <div class="card">Distinct items <span class="value" id="distinct">-</span></div>
+      <div class="card">Total units <span class="value" id="units">-</span></div>
+      <div class="card">Low stock <span class="value" id="low">-</span></div>
+      <div class="card">Out of stock <span class="value" id="out">-</span></div>
+      <div class="card">Inventory value <span class="value" id="value">-</span></div>
+    </section>
+    <h2>Inventory</h2>
+    <table>
+      <thead><tr><th>SKU</th><th>Item</th><th>Category</th><th>Quantity</th><th>Status</th><th>Adjust</th></tr></thead>
+      <tbody id="inventory"></tbody>
+    </table>
+  </main>
+  <script>
+    const message = document.querySelector("#message");
+    const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+    async function request(path, options) {
+      const response = await fetch(path, options);
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
+      return body;
+    }
+
+    async function load() {
+      try {
+        const [summary, items] = await Promise.all([
+          request("/api/inventory/summary"),
+          request("/api/inventory")
+        ]);
+        document.querySelector("#distinct").textContent = summary.distinct_items;
+        document.querySelector("#units").textContent = summary.total_units;
+        document.querySelector("#low").textContent = summary.low_stock_items;
+        document.querySelector("#out").textContent = summary.out_of_stock_items;
+        document.querySelector("#value").textContent = currency.format(summary.inventory_value_cents / 100);
+        const rows = document.querySelector("#inventory");
+        rows.replaceChildren(...items.map(item => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td data-label="SKU">${item.sku}</td>
+            <td data-label="Item">${item.name}</td>
+            <td data-label="Category">${item.category}</td>
+            <td data-label="Quantity">${item.quantity}</td>
+            <td data-label="Status" class="${item.status}">${item.status.replaceAll("_", " ")}</td>
+            <td data-label="Adjust">
+              <label class="sr-only" for="adjust-${item.sku}">Quantity change for ${item.name}</label>
+              <input id="adjust-${item.sku}" type="number" min="-1000" max="1000" value="1" required>
+              <button type="button" data-sku="${item.sku}">Apply</button>
+            </td>`;
+          return row;
+        }));
+        message.textContent = `Loaded ${items.length} inventory items.`;
+      } catch (error) {
+        message.textContent = `Unable to load inventory: ${error.message}`;
+      }
+    }
+
+    document.querySelector("#inventory").addEventListener("click", async event => {
+      if (!event.target.matches("button[data-sku]")) return;
+      const sku = event.target.dataset.sku;
+      const quantityDelta = Number(document.querySelector(`#adjust-${sku}`).value);
+      try {
+        await request(`/api/inventory/${encodeURIComponent(sku)}/adjust`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quantity_delta: quantityDelta })
+        });
+        message.textContent = `Updated ${sku}.`;
+        await load();
+      } catch (error) {
+        message.textContent = `Could not update ${sku}: ${error.message}`;
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+# DEPLOYMENT SCAFFOLD ONLY - not validated against a live connected environment.
+# Replace every ${...} token before presenting this file to Azure CLI.
+location: "${LOCATION}"
+name: "${CONTAINER_APP_NAME}"
+type: Microsoft.App/containerApps
+properties:
+  environmentId: "${CONNECTED_ENVIRONMENT_RESOURCE_ID}"
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      external: true
+      targetPort: 8080
+      transport: auto
+  template:
+    containers:
+      - name: inventory
+        image: "${IMAGE_REFERENCE}"
+        env:
+          - name: PORT
+            value: "8080"
+        probes:
+          - type: Liveness
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          - type: Readiness
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+    scale:
+      minReplicas: 1
+      maxReplicas: 1
