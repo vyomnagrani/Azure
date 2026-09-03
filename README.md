@@ -1,10 +1,11 @@
 # Azure Container Apps — Skills & Documentation
 
-This repository contains three complementary sets of Azure Container Apps content:
+This repository contains four complementary sets of Azure Container Apps content:
 
 1. **ACA Skill Contributions** (plugin/skills/) — Proposed skill files for [GitHub Copilot for Azure](https://github.com/microsoft/GitHub-Copilot-for-Azure) that improve Container Apps capabilities within the Copilot agent.
 2. **ACA Express Documentation** (aca-express-docs/) — Comprehensive documentation for Azure Container Apps Express, covering deployment, configuration, scaling, monitoring, and troubleshooting.
 3. **ACA Sandbox Agent 365 Sample** ([aca-sandbox-agent-a365/](aca-sandbox-agent-a365/)) — An offline-first inbox agent that demonstrates Azure Container Apps Sandbox lifecycle management and Microsoft Agent 365 identity, tooling, observability, and governance.
+4. **ACA Arc Templates** ([aca-arc-templates/](aca-arc-templates/)) — A local-first "Contoso Edge Store" inventory API and dashboard with conservative first-application scaffolding for an existing Azure Container Apps connected environment on Arc-enabled Kubernetes.
 
 ---
 
@@ -55,6 +56,20 @@ inbox agent in a lifecycle-managed Azure Container Apps Sandbox, register it
 with Microsoft Agent 365, and access Work IQ Mail through delegated
 on-behalf-of authorization. Start with its fixture-backed offline mode before
 enabling any live mailbox permission.
+
+---
+
+## ACA Arc Templates
+
+The `aca-arc-templates/` sample is an initial local-only golden path for Azure
+Container Apps on Arc-enabled Kubernetes. It includes a deterministic FastAPI
+inventory service, zero-dependency dashboard, unit/API tests, read-only
+preflight, defensive cleanup, deployment scaffolding, and an operator-focused
+walkthrough.
+
+Start locally without Docker, Azure authentication, or a Kubernetes cluster.
+Image build, Azure deployment, and validation against the reserved
+Arc-enabled cluster are explicitly deferred.
 
 ---
 
